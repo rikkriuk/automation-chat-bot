@@ -1,6 +1,9 @@
 import dotenv from "dotenv";
 import { Bot, Context, InlineKeyboard } from "grammy";
 import { ChildProcess, spawn } from "child_process";
+import { writeFileSync, existsSync, readFileSync, unlinkSync } from "fs";
+
+const PID_FILE = "./userbot.pid";
 
 dotenv.config();
 
@@ -57,7 +60,10 @@ async function startUserbot(ctx?: Context) {
    userbotProcess = spawn("npx", ["ts-node", "src/index.ts"], {
       stdio: "pipe",
       shell: true,
+      detached: true,
    });
+
+   userbotProcess.unref();
 
    userbotProcess.stdout?.on("data", (data: Buffer) => {
       const log = data.toString().trim();
@@ -73,7 +79,10 @@ async function startUserbot(ctx?: Context) {
    });
 
    userbotProcess.on("exit", (code: number | null) => {
-      userbotProcess = null;
+      if (userbotProcess !== null) {
+         userbotProcess = null;
+         bot.api.sendMessage(OWNER_ID, `⚠️ Userbot berhenti tidak terduga (exit code: ${code})`);
+      }
       bot.api.sendMessage(OWNER_ID, `⚠️ Userbot berhenti (exit code: ${code})`);
    });
 
@@ -92,8 +101,22 @@ async function stopUserbot(ctx?: Context) {
       return;
    }
 
-   userbotProcess.kill("SIGINT");
+   const proc = userbotProcess;
    userbotProcess = null;
+
+   try {
+      if (existsSync(PID_FILE)) {
+         const pid = parseInt(readFileSync(PID_FILE, "utf-8").trim());
+         unlinkSync(PID_FILE);
+         process.kill(pid, "SIGTERM");
+      } else {
+         // Fallback
+         proc.kill("SIGTERM");
+      }
+   } catch (e) {
+      console.error("Kill error:", e);
+      try { proc.kill("SIGKILL"); } catch {}
+   }
 
    if (ctx) return ctx.reply("🛑 Userbot dihentikan.");
    return bot.api.sendMessage(OWNER_ID, "🛑 Userbot dihentikan.");
