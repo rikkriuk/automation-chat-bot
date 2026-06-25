@@ -1,13 +1,10 @@
-import dotenv from "dotenv";
 import fs from "fs";
 import readline from "readline";
-
-dotenv.config();
 
 export const requiredEnv: Record<string, string> = {
    API_ID: process.env.API_ID || "",
    API_HASH: process.env.API_HASH || "",
-   // SESSION_STRING: process.env.SESSION_STRING || "",
+   SESSION_STRING: process.env.SESSION_STRING || "",
    TARGET_USERNAME: process.env.TARGET_USERNAME || "",
 };
 

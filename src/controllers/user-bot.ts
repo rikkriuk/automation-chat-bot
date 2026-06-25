@@ -1,7 +1,7 @@
 import dotenv from "dotenv";
 import { Bot, Context, InlineKeyboard } from "grammy";
 import { ChildProcess, spawn } from "child_process";
-import { existsSync, readFileSync, unlinkSync } from "fs";
+import { existsSync, readFileSync, unlinkSync, writeFileSync } from "fs";
 
 dotenv.config();
 
@@ -42,25 +42,25 @@ async function startAccount(accountId: number, isAuto = false) {
       return notify(`⚠️ ${account.label} sudah berjalan.`);
    }
 
-   const proc = spawn("npx", ["ts-node", "src/index.ts"], {
+   const envPath = `.env.account${accountId}`;
+   writeFileSync(envPath, `SESSION_STRING=${account.SESSION_STRING}\n`);
+
+   const proc = spawn("npx", ["@dotenvx/dotenvx", "run", "--env-file=.env", `--env-file=${envPath}`, "--", "ts-node", "src/index.ts"], {
       stdio: "pipe",
       shell: true,
-      detached: true,
-      env: {
-         ...process.env,
-         SESSION_STRING: account.SESSION_STRING,
-         ACCOUNT_ID: String(accountId),
-      },
    });
 
-   proc.unref();
-   processes.set(accountId, proc);
-   currentAccountIndex = ACCOUNTS.findIndex(a => a.id === accountId);
+   proc.stderr?.on("data", (data: Buffer) => {
+      const log = data.toString().trim();
+      console.error(`[${account.label}] STDERR: ${log}`);
+      bot.api
+         .sendMessage(OWNER_ID, `[${account.label}] ❌ ${log}`)
+         .catch(console.error);
+   });
 
    proc.stdout?.on("data", (data: Buffer) => {
       const log = data.toString().trim();
       console.log(`[${account.label}] ${log}`);
-
       if (
          log.includes("✅") ||
          log.includes("🔄") ||
@@ -76,17 +76,14 @@ async function startAccount(accountId: number, isAuto = false) {
    proc.on("exit", async (code) => {
       const wasRunning = processes.has(accountId);
       processes.delete(accountId);
-
       try { unlinkSync(getPidFile(accountId)); } catch {}
-
       if (wasRunning) {
          await notify(`⚠️ ${account.label} berhenti tidak terduga (exit code: ${code})`);
-
-         if (autoFallback) {
-            await tryFallback(accountId);
-         }
+         if (autoFallback) await tryFallback(accountId);
       }
    });
+
+   processes.set(accountId, proc);
 
    const label = isAuto ? `🔄 Auto-switch ke ${account.label}` : `✅ ${account.label} berhasil dijalankan!`;
    await notify(label);
