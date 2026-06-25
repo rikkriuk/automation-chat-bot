@@ -36,8 +36,27 @@ const PID_FILE = `./userbot-${accountId}.pid`;
             await client.connect();
             registerEventHandlers(client, env.TARGET_USERNAME);
          }
-      } catch (e) {
-         console.error("❌ Reconnect gagal:", e);
+
+         await client.getMe();
+      } catch (e: any) {
+         console.error("❌ Keepalive error:", e.message);
+
+         if (e.message?.includes("TIMEOUT") || e.message?.includes("disconnected")) {
+            console.log("🔄 TIMEOUT terdeteksi → reconnect...");
+            try {
+               await client.disconnect();
+            } catch {}
+
+            await new Promise(r => setTimeout(r, 3000));
+            try {
+               await client.connect();
+               registerEventHandlers(client, env.TARGET_USERNAME);
+               console.log("✅ Reconnect berhasil");
+            } catch (reconnectErr) {
+               console.error("❌ Reconnect gagal:", reconnectErr);
+               process.exit(1);
+            }
+         }
       }
    }, 15_000);
 
