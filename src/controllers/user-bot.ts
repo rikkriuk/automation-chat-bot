@@ -68,22 +68,28 @@ async function startUserbot(ctx?: Context) {
    userbotProcess.stdout?.on("data", (data: Buffer) => {
       const log = data.toString().trim();
       console.log(log);
+
       if (
          log.includes("✅") ||
          log.includes("🔄") ||
          log.includes("⏰") ||
          log.includes("❓")
       ) {
-         bot.api.sendMessage(OWNER_ID, `\`${log}\``, { parse_mode: "Markdown" });
+         bot.api
+            .sendMessage(OWNER_ID, log)
+            .catch((e) => console.error("Gagal kirim log:", e));
       }
    });
 
    userbotProcess.on("exit", (code: number | null) => {
-      if (userbotProcess !== null) {
-         userbotProcess = null;
-         bot.api.sendMessage(OWNER_ID, `⚠️ Userbot berhenti tidak terduga (exit code: ${code})`);
+      const wasRunning = userbotProcess !== null;
+      userbotProcess = null;
+
+      if (wasRunning) {
+         bot.api
+            .sendMessage(OWNER_ID, `⚠️ Userbot berhenti tidak terduga (exit code: ${code})`)
+            .catch(console.error);
       }
-      bot.api.sendMessage(OWNER_ID, `⚠️ Userbot berhenti (exit code: ${code})`);
    });
 
    if (ctx) await ctx.reply("✅ Userbot berhasil dijalankan!");
