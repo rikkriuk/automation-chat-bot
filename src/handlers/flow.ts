@@ -1,6 +1,6 @@
 import { TelegramClient, Api } from "telegram";
 import { state, resetState, startReplyTimeout, clearReplyTimeout } from "../state";
-import { MALE_KEYWORDS, FEMALE_KEYWORDS, MALE_RESPONSES, FEMALE_RESPONSES, ASK_GENDER } from "../config/triggers";
+import { MALE_KEYWORDS, FEMALE_KEYWORDS, MALE_RESPONSES, FEMALE_RESPONSES, ASK_GENDER, ASK_GENDER_BY_PARTNER, GREET_KEYWORDS, GREET_RESPONSES } from "../config/triggers";
 
 const sleep = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms));
 
@@ -48,6 +48,35 @@ export async function processUserReply(
 
    const lower = text.toLowerCase().trim();
    console.log(`[Step ${state.currentStep}] User: ${text}`);
+
+   const isGreeting = GREET_KEYWORDS.some(kw => 
+      lower === kw || 
+      lower.startsWith(kw + " ") || 
+      lower.endsWith(" " + kw)
+   );
+   if (isGreeting && state.currentStep <= 3) {
+      const randomGreet = GREET_RESPONSES[Math.floor(Math.random() * GREET_RESPONSES.length)];
+      await sendWithDelay(client, username, randomGreet, 800);
+      if (state.chatAborted) { resetState(); return; }
+      if (state.currentStep === 1 || state.currentStep === 2) {
+         startReplyTimeout(client, username);
+      }
+      return;
+   }
+
+   const isAskingGender = ASK_GENDER_BY_PARTNER.some(kw => lower.includes(kw));
+   if (isAskingGender) {
+      const coResponses = ["co", "cowo", "cow", "laki", "co nih", "co dong"];
+      const randomCo = coResponses[Math.floor(Math.random() * coResponses.length)];
+      await sendWithDelay(client, username, randomCo, 800);
+      if (state.chatAborted) { resetState(); return; }
+      if (state.currentStep === 1) {
+         await handleGenderStep(client, username, lower);
+      } else if (state.currentStep === 2) {
+         startReplyTimeout(client, username);
+      }
+      return;
+   }
 
    if (state.currentStep === 1) {
       await handleGenderStep(client, username, lower);

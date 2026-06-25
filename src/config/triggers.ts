@@ -72,3 +72,24 @@ export const ASK_GENDER = [
    "gender?", "lo co?", "cewe apa cowo?", "cw/co?",
    "km coce?", "co ce?",
 ];
+
+export const ASK_GENDER_BY_PARTNER = [
+   ...ASK_GENDER,
+   "lo cowo?", "kamu co?", "kamu ce?", "km ce?", "km co?",
+   "p apa w?", "pw?", "laki apa pr?", "laki apa perempuan?",
+   "lo laki?", "lo cewe?", "kamu laki?", "kamu cewe?",
+   "lo cowok?", "lo cewek?", "male or female?", "boy or girl?",
+];
+
+export const GREET_KEYWORDS = [
+   "hii", "hai", "hello", "halo", "hay", "hi", "hei", "heii",
+   "haii", "haloo", "helloo", "halooo", "hey", "heyy", "heww",
+   "hy", "hola", "assalamualaikum", "waalaikumsalam", "p", "permisi",
+];
+
+export const GREET_RESPONSES = [
+   "hai", "haii", "halo", "haloo", "hi", "hii", "hey",
+   "heyy", "heww", "hai juga", "halo juga", "hi juga",
+   "haiii", "haloooo", "hihi", "hehe hai", "hai hai",
+   "yo", "hoi", "hoii",
+];
