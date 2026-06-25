@@ -1,2 +1,7 @@
 node_modules
 .env
+.env.account*
+userbot-*.pid
+userbot.pid
+
+!.env.example
