@@ -103,6 +103,7 @@ async function handleAgeStep(client: TelegramClient, username: string, lower: st
 
    if (ageMatch) {
       const age = parseInt(ageMatch[1]);
+
       if (age < 12) {
          console.log("👶 Umur < 12 → Skip");
          await sendWithDelay(client, username, "oke", 900);
@@ -112,6 +113,21 @@ async function handleAgeStep(client: TelegramClient, username: string, lower: st
          resetState();
          return;
       }
+
+      const ageResponses = [
+         `${age}? oke`,
+         `ooh ${age}`,
+         `wah ${age} tahun`,
+         `${age} ya? oke`,
+         `oh ${age}`,
+         `${age} toh`,
+         `ooh ${age} ya`,
+         `wih ${age}`,
+         `${age} ya, okok`,
+      ];
+      const randomAgeResponse = ageResponses[Math.floor(Math.random() * ageResponses.length)];
+      await sendWithDelay(client, username, randomAgeResponse, 1000);
+      await new Promise(r => setTimeout(r, 800));
    }
 
    if (state.chatAborted) { resetState(); return; }
@@ -121,7 +137,7 @@ async function handleAgeStep(client: TelegramClient, username: string, lower: st
 async function goToHi(client: TelegramClient, username: string) {
    state.currentStep = 3;
 
-   await sendWithDelay(client, username, "Bot buat kirim stiker tele jadi stiker whatsapp, kali aja butuh", 1600);
+   await sendWithDelay(client, username, "Btw, saia ada bot buat kirim stiker tele jadi stiker whatsapp, kali aja butuh", 1600);
    await sendWithDelay(client, username, "@SendStickerBot", 500);
    if (state.chatAborted) { resetState(); return; }
 
