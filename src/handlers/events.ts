@@ -15,6 +15,7 @@ export function registerEventHandlers(client: TelegramClient, username: string) 
    client.addEventHandler(async (event: NewMessageEvent) => {
       const message = event.message;
       if (!message?.text) return;
+      if (message.out) return;
 
       try {
          const text = message.text.trim();

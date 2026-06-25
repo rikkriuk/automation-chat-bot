@@ -32,6 +32,14 @@ export const SYSTEM_MESSAGES = [
    "anda bisa mengubah gender",
    "ketik /search untuk",
    "ketik /next untuk",
+   "partner ditemukan",
+   "anda bisa mulai mengobrol",
+   "chat berakhir",
+   "ketik /stop untuk",
+   "jika partner anda",
+   "t.me/obrolan_anonimbot",
+   "/next – partner berikutnya",
+   "/stop – akhiri chat",
 ];
 
 export const MALE_KEYWORDS = ["co", "cowok", "cowo", "laki", "pria", "male", "bro", "coce"];
@@ -84,7 +92,7 @@ export const ASK_GENDER_BY_PARTNER = [
 export const GREET_KEYWORDS = [
    "hii", "hai", "hello", "halo", "hay", "hi", "hei", "heii",
    "haii", "haloo", "helloo", "halooo", "hey", "heyy", "heww",
-   "hy", "hola", "assalamualaikum", "waalaikumsalam", "p", "permisi",
+   "hy", "hola", "assalamualaikum", "waalaikumsalam", "permisi",
 ];
 
 export const GREET_RESPONSES = [

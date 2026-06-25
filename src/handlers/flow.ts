@@ -103,11 +103,12 @@ export async function processUserReply(
 
 async function handleGenderStep(client: TelegramClient, username: string, lower: string) {
    const ageMatch = lower.match(/\b(\d{1,2})\b/);
-   if (ageMatch) {
-      state.detectedAge = parseInt(ageMatch[1]);
-   }
+   if (ageMatch) state.detectedAge = parseInt(ageMatch[1]);
 
-   if (MALE_KEYWORDS.some(kw => lower.includes(kw))) {
+   const isMale = MALE_KEYWORDS.some(kw => new RegExp(`\\b${kw}\\b`).test(lower));
+   const isFemale = FEMALE_KEYWORDS.some(kw => new RegExp(`\\b${kw}\\b`).test(lower));
+
+   if (isMale) {
       const randomResponse = MALE_RESPONSES[Math.floor(Math.random() * MALE_RESPONSES.length)];
       console.log("👨 Cowok → Skip");
       await sendWithDelay(client, username, randomResponse, 1000);
@@ -117,7 +118,7 @@ async function handleGenderStep(client: TelegramClient, username: string, lower:
       return;
    }
 
-   if (FEMALE_KEYWORDS.some(kw => lower.includes(kw))) {
+   if (isFemale) {
       const randomResponse = FEMALE_RESPONSES[Math.floor(Math.random() * FEMALE_RESPONSES.length)];
       state.currentStep = 2;
 
