@@ -8,11 +8,11 @@ git pull origin master
 echo "📥 Installing dependencies..."
 npm install
 
-echo "🔄 Restarting controller..."
-if pm2 list | grep -q "controller"; then
-   pm2 restart controller
+echo "🔄 Restarting automation-chat-bot..."
+if pm2 list | grep -q "automation-chat-bot"; then
+   pm2 restart automation-chat-bot
 else
-   pm2 start "npm run controller" --name "controller"
+   pm2 start "npm run bot" --name "automation-chat-bot"
 fi
 
 pm2 save
