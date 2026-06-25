@@ -1,6 +1,6 @@
 import { TelegramClient, Api } from "telegram";
 import { state, resetState, startReplyTimeout, clearReplyTimeout } from "../state";
-import { MALE_KEYWORDS, FEMALE_KEYWORDS } from "../config/triggers";
+import { MALE_KEYWORDS, FEMALE_KEYWORDS, MALE_RESPONSES, FEMALE_RESPONSES, ASK_GENDER } from "../config/triggers";
 
 const sleep = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms));
 
@@ -29,8 +29,10 @@ export async function handlePartnerFound(client: TelegramClient, username: strin
    state.chatAborted = false;
    state.currentStep = 1;
 
-   console.log("✅ Partner found → Kirim 'co'");
-   await sendWithDelay(client, username, "co", 1800);
+   await sendWithDelay(client, username, "co", 1000);
+   const randomAsk = ASK_GENDER[Math.floor(Math.random() * ASK_GENDER.length)];
+   console.log(`✅ Partner found → Kirim '${randomAsk}'`);
+   await sendWithDelay(client, username, randomAsk, 1500);
    startReplyTimeout(client, username);
 }
 
@@ -60,19 +62,32 @@ export async function processUserReply(
 
 async function handleGenderStep(client: TelegramClient, username: string, lower: string) {
    if (MALE_KEYWORDS.some(kw => lower.includes(kw))) {
+      const randomResponse = MALE_RESPONSES[Math.floor(Math.random() * MALE_RESPONSES.length)];
+
       console.log("👨 Cowok → Skip");
-      await sendWithDelay(client, username, "oke", 1000);
+
+      await sendWithDelay(client, username, randomResponse, 1000);
       await new Promise(r => setTimeout(r, 1200));
+
       if (state.chatAborted) { resetState(); return; }
+
       await sendWithDelay(client, username, "/next");
       resetState();
       return;
    }
 
    if (FEMALE_KEYWORDS.some(kw => lower.includes(kw))) {
+      const randomResponse = FEMALE_RESPONSES[Math.floor(Math.random() * FEMALE_RESPONSES.length)];
       state.currentStep = 2;
-      await sendWithDelay(client, username, "Umur brp?", 1400);
+
+      await sendWithDelay(client, username, randomResponse, 1000);
+      await new Promise(r => setTimeout(r, 800));
+
       if (state.chatAborted) { resetState(); return; }
+
+      await sendWithDelay(client, username, "umur brp?", 1400);
+      if (state.chatAborted) { resetState(); return; }
+
       startReplyTimeout(client, username);
       return;
    }
