@@ -1,6 +1,6 @@
 import { TelegramClient, Api } from "telegram";
 import { state, resetState, startReplyTimeout, clearReplyTimeout } from "../state";
-import { MALE_KEYWORDS, FEMALE_KEYWORDS, MALE_RESPONSES, FEMALE_RESPONSES, ASK_GENDER, ASK_GENDER_BY_PARTNER, GREET_KEYWORDS, GREET_RESPONSES } from "../config/triggers";
+import { MALE_KEYWORDS, FEMALE_KEYWORDS, MALE_RESPONSES, FEMALE_RESPONSES, ASK_GENDER, ASK_GENDER_BY_PARTNER, GREET_KEYWORDS, GREET_RESPONSES, SYSTEM_MESSAGES, TRIGGER_PARTNER_FOUND, TRIGGER_CHAT_ENDED, TRIGGER_SEARCHING } from "../config/triggers";
 
 const sleep = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms));
 
@@ -43,6 +43,18 @@ export async function processUserReply(
 ) {
    if (!state.isProcessing || !text) return;
    if (state.chatAborted) return;
+
+   const isSystemMessage = [
+      ...SYSTEM_MESSAGES,
+      ...TRIGGER_PARTNER_FOUND,
+      ...TRIGGER_CHAT_ENDED,
+      ...TRIGGER_SEARCHING,
+   ].some(kw => text.toLowerCase().includes(kw.toLowerCase()));
+
+   if (isSystemMessage) {
+      console.log(`⚙️ Pesan sistem dilewati: "${text}"`);
+      return;
+   }
 
    clearReplyTimeout();
 
@@ -167,9 +179,11 @@ async function handleAgeStep(client: TelegramClient, username: string, lower: st
 }
 
 async function goToHi(client: TelegramClient, username: string) {
+   if (state.currentStep === 3) return;
    state.currentStep = 3;
 
    await sendWithDelay(client, username, "Btw, saia ada bot buat kirim stiker tele jadi stiker whatsapp, kali aja butuh", 1600);
+   if (state.chatAborted) { resetState(); return; }
    await sendWithDelay(client, username, "@SendStickerBot", 500);
    if (state.chatAborted) { resetState(); return; }
 
