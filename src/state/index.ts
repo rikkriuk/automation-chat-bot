@@ -5,6 +5,7 @@ export const state = {
    currentStep: 0,
    chatAborted: false,
    isSearching: false,
+   detectedAge: null as number | null,
    replyTimeout: null as NodeJS.Timeout | null,
 };
 
@@ -12,6 +13,7 @@ export function resetState() {
    state.isProcessing = false;
    state.currentStep = 0;
    state.chatAborted = false;
+   state.detectedAge = null;
    clearReplyTimeout();
 }
 

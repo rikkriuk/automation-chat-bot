@@ -61,16 +61,16 @@ export async function processUserReply(
 }
 
 async function handleGenderStep(client: TelegramClient, username: string, lower: string) {
+   const ageMatch = lower.match(/\b(\d{1,2})\b/);
+   if (ageMatch) {
+      state.detectedAge = parseInt(ageMatch[1]);
+   }
+
    if (MALE_KEYWORDS.some(kw => lower.includes(kw))) {
       const randomResponse = MALE_RESPONSES[Math.floor(Math.random() * MALE_RESPONSES.length)];
-
       console.log("👨 Cowok → Skip");
-
       await sendWithDelay(client, username, randomResponse, 1000);
-      await new Promise(r => setTimeout(r, 1200));
-
       if (state.chatAborted) { resetState(); return; }
-
       await sendWithDelay(client, username, "/next");
       resetState();
       return;
@@ -81,13 +81,16 @@ async function handleGenderStep(client: TelegramClient, username: string, lower:
       state.currentStep = 2;
 
       await sendWithDelay(client, username, randomResponse, 1000);
-      await new Promise(r => setTimeout(r, 800));
-
       if (state.chatAborted) { resetState(); return; }
+
+      if (state.detectedAge !== null) {
+         console.log(`✅ Umur sudah diketahui: ${state.detectedAge}`);
+         await handleAgeStep(client, username, String(state.detectedAge));
+         return;
+      }
 
       await sendWithDelay(client, username, "umur brp?", 1400);
       if (state.chatAborted) { resetState(); return; }
-
       startReplyTimeout(client, username);
       return;
    }
