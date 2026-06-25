@@ -1,6 +1,6 @@
 import { TelegramClient, Api } from "telegram";
 import { state, resetState, startReplyTimeout, clearReplyTimeout } from "../state";
-import { MALE_KEYWORDS, FEMALE_KEYWORDS, MALE_RESPONSES, FEMALE_RESPONSES, ASK_GENDER, ASK_GENDER_BY_PARTNER, GREET_KEYWORDS, GREET_RESPONSES, SYSTEM_MESSAGES, TRIGGER_PARTNER_FOUND, TRIGGER_CHAT_ENDED, TRIGGER_SEARCHING } from "../config/triggers";
+import { MALE_KEYWORDS, FEMALE_KEYWORDS, MALE_RESPONSES, FEMALE_RESPONSES, ASK_GENDER, ASK_GENDER_BY_PARTNER, GREET_KEYWORDS, GREET_RESPONSES, SYSTEM_MESSAGES, TRIGGER_PARTNER_FOUND, TRIGGER_CHAT_ENDED, TRIGGER_SEARCHING, ASK_AGE } from "../config/triggers";
 
 const sleep = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms));
 
@@ -130,7 +130,8 @@ async function handleGenderStep(client: TelegramClient, username: string, lower:
          return;
       }
 
-      await sendWithDelay(client, username, "umur brp?", 1400);
+      const randomAskAge = ASK_AGE[Math.floor(Math.random() * ASK_AGE.length)];
+      await sendWithDelay(client, username, randomAskAge, 1700);
       if (state.chatAborted) { resetState(); return; }
       startReplyTimeout(client, username);
       return;
@@ -170,7 +171,7 @@ async function handleAgeStep(client: TelegramClient, username: string, lower: st
          `${age} ya, okok`,
       ];
       const randomAgeResponse = ageResponses[Math.floor(Math.random() * ageResponses.length)];
-      await sendWithDelay(client, username, randomAgeResponse, 1000);
+      await sendWithDelay(client, username, randomAgeResponse, 1300);
       await new Promise(r => setTimeout(r, 800));
    }
 
@@ -182,9 +183,9 @@ async function goToHi(client: TelegramClient, username: string) {
    if (state.currentStep === 3) return;
    state.currentStep = 3;
 
-   await sendWithDelay(client, username, "Btw, aku ada bot buat kirim stiker tele jadi stiker whatsapp, kali aja butuh", 1600);
+   await sendWithDelay(client, username, "Btw, aku bikin bot buat kirim stiker tele jadi stiker whatsapp otomatis, kali aja butuh", 3000);
    if (state.chatAborted) { resetState(); return; }
-   await sendWithDelay(client, username, "@SendStickerBot", 500);
+   await sendWithDelay(client, username, "@SendStickerBot", 1000);
    if (state.chatAborted) { resetState(); return; }
 
    await sendWithDelay(client, username, "/stop", 500);

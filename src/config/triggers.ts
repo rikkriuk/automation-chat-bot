@@ -96,6 +96,11 @@ export const GREET_RESPONSES = [
    "yo", "hoi", "hoii",
 ];
 
+export const ASK_AGE = [
+  "umur brp?", "umur berapa?", "brp umur?", "usia brp?", "umurnya brp?",
+  "umur?", "emg umur brp?", "umurnya?", "umur km?", "umur brp kak?",
+];
+
 export const SPAM_KEYWORDS: string[] = [
    "pinksale", "presale", "binance", "бинанс", "куплю", "wtb", "buy",
    "soft cap", "hard cap", "bnb", "btc", "usdt", "maker", "мейкер",
