@@ -1,73 +1,65 @@
 import dotenv from "dotenv";
 import { Bot, Context, InlineKeyboard } from "grammy";
 import { ChildProcess, spawn } from "child_process";
-import { writeFileSync, existsSync, readFileSync, unlinkSync } from "fs";
-
-const PID_FILE = "./userbot.pid";
+import { existsSync, readFileSync, unlinkSync } from "fs";
 
 dotenv.config();
 
-const CONTROLLER_BOT_TOKEN = process.env.CONTROLLER_BOT_TOKEN;
-const OWNER_ID_RAW = process.env.OWNER_TELEGRAM_ID;
+const CONTROLLER_BOT_TOKEN = process.env.CONTROLLER_BOT_TOKEN!;
+const OWNER_ID = parseInt(process.env.OWNER_TELEGRAM_ID!, 10);
 
-if (!CONTROLLER_BOT_TOKEN) {
-   console.error("Missing CONTROLLER_BOT_TOKEN in environment (.env). Set CONTROLLER_BOT_TOKEN=your_bot_token");
-   process.exit(1);
-}
-
-if (!OWNER_ID_RAW) {
-   console.error("Missing OWNER_TELEGRAM_ID in environment (.env). Set OWNER_TELEGRAM_ID=your_telegram_id");
-   process.exit(1);
-}
-
-const OWNER_ID = parseInt(OWNER_ID_RAW, 10);
-if (Number.isNaN(OWNER_ID)) {
-   console.error("Invalid OWNER_TELEGRAM_ID; must be a number (your Telegram numeric id)");
-   process.exit(1);
-}
+const ACCOUNTS = [
+   { id: 1, SESSION_STRING: process.env.SESSION_1!, label: "Akun 1" },
+   { id: 2, SESSION_STRING: process.env.SESSION_2!, label: "Akun 2" },
+   { id: 3, SESSION_STRING: process.env.SESSION_3!, label: "Akun 3" },
+   { id: 4, SESSION_STRING: process.env.SESSION_4!, label: "Akun 4" },
+   { id: 5, SESSION_STRING: process.env.SESSION_5!, label: "Akun 5" },
+].filter(acc => acc.SESSION_STRING);
 
 const bot = new Bot(CONTROLLER_BOT_TOKEN);
 
-let userbotProcess: ChildProcess | null = null;
+const processes = new Map<number, ChildProcess>();
+let currentAccountIndex = 0;
+let autoFallback = true;
 
-function isOwner(ctx: Context | { from?: { id?: number } } ): boolean {
-   return ctx.from?.id === OWNER_ID;
+function getPidFile(accountId: number) {
+   return `./userbot-${accountId}.pid`;
 }
 
-async function sendControlKeyboard() {
-   const keyboard = new InlineKeyboard()
-      .text("▶️ Start", "ctrl:start")
-      .text("⏹️ Stop", "ctrl:stop")
-      .row()
-      .text("ℹ️ Status", "ctrl:status");
-
-   try {
-      await bot.api.sendMessage(OWNER_ID, "Kontrol userbot:", { reply_markup: keyboard });
-   } catch (e) {
-      console.error("Gagal mengirim keyboard kontrol:", e);
-   }
+function getActiveAccount() {
+   return ACCOUNTS[currentAccountIndex];
 }
 
-async function startUserbot(ctx?: Context) {
-   if (ctx && !isOwner(ctx)) return ctx.reply("❌ Tidak diizinkan.");
+async function notify(msg: string) {
+   await bot.api.sendMessage(OWNER_ID, msg).catch(console.error);
+}
 
-   if (userbotProcess) {
-      if (ctx) return ctx.reply("⚠️ Userbot sudah berjalan.");
-      await bot.api.sendMessage(OWNER_ID, "⚠️ Userbot sudah berjalan.");
-      return;
+async function startAccount(accountId: number, isAuto = false) {
+   const account = ACCOUNTS.find(a => a.id === accountId);
+   if (!account) return notify(`❌ Akun ${accountId} tidak ditemukan.`);
+
+   if (processes.has(accountId)) {
+      return notify(`⚠️ ${account.label} sudah berjalan.`);
    }
 
-   userbotProcess = spawn("npx", ["ts-node", "src/index.ts"], {
+   const proc = spawn("npx", ["ts-node", "src/index.ts"], {
       stdio: "pipe",
       shell: true,
       detached: true,
+      env: {
+         ...process.env,
+         SESSION_STRING: account.SESSION_STRING,
+         ACCOUNT_ID: String(accountId),
+      },
    });
 
-   userbotProcess.unref();
+   proc.unref();
+   processes.set(accountId, proc);
+   currentAccountIndex = ACCOUNTS.findIndex(a => a.id === accountId);
 
-   userbotProcess.stdout?.on("data", (data: Buffer) => {
+   proc.stdout?.on("data", (data: Buffer) => {
       const log = data.toString().trim();
-      console.log(log);
+      console.log(`[${account.label}] ${log}`);
 
       if (
          log.includes("✅") ||
@@ -76,103 +68,158 @@ async function startUserbot(ctx?: Context) {
          log.includes("❓")
       ) {
          bot.api
-            .sendMessage(OWNER_ID, log)
-            .catch((e) => console.error("Gagal kirim log:", e));
-      }
-   });
-
-   userbotProcess.on("exit", (code: number | null) => {
-      const wasRunning = userbotProcess !== null;
-      userbotProcess = null;
-
-      if (wasRunning) {
-         bot.api
-            .sendMessage(OWNER_ID, `⚠️ Userbot berhenti tidak terduga (exit code: ${code})`)
+            .sendMessage(OWNER_ID, `[${account.label}] ${log}`)
             .catch(console.error);
       }
    });
 
-   if (ctx) await ctx.reply("✅ Userbot berhasil dijalankan!");
-   else await bot.api.sendMessage(OWNER_ID, "✅ Userbot berhasil dijalankan!");
+   proc.on("exit", async (code) => {
+      const wasRunning = processes.has(accountId);
+      processes.delete(accountId);
 
+      try { unlinkSync(getPidFile(accountId)); } catch {}
+
+      if (wasRunning) {
+         await notify(`⚠️ ${account.label} berhenti tidak terduga (exit code: ${code})`);
+
+         if (autoFallback) {
+            await tryFallback(accountId);
+         }
+      }
+   });
+
+   const label = isAuto ? `🔄 Auto-switch ke ${account.label}` : `✅ ${account.label} berhasil dijalankan!`;
+   await notify(label);
    await sendControlKeyboard();
 }
 
-async function stopUserbot(ctx?: Context) {
-   if (ctx && !isOwner(ctx)) return ctx.reply("❌ Tidak diizinkan.");
+async function tryFallback(failedAccountId: number) {
+   const nextAccount = ACCOUNTS.find(
+      a => a.id !== failedAccountId && !processes.has(a.id)
+   );
 
-   if (!userbotProcess) {
-      if (ctx) return ctx.reply("⚠️ Userbot tidak sedang berjalan.");
-      await bot.api.sendMessage(OWNER_ID, "⚠️ Userbot tidak sedang berjalan.");
+   if (!nextAccount) {
+      await notify("❌ Semua akun sudah dicoba atau sedang berjalan. Tidak ada fallback.");
       return;
    }
 
-   const proc = userbotProcess;
-   userbotProcess = null;
+   await notify(`🔁 Mencoba fallback ke ${nextAccount.label}...`);
+   await startAccount(nextAccount.id, true);
+}
 
+async function stopAccount(accountId: number) {
+   const account = ACCOUNTS.find(a => a.id === accountId);
+   const proc = processes.get(accountId);
+
+   if (!proc) {
+      return notify(`⚠️ ${account?.label ?? `Akun ${accountId}`} tidak sedang berjalan.`);
+   }
+
+   processes.delete(accountId);
+
+   const pidFile = getPidFile(accountId);
    try {
-      if (existsSync(PID_FILE)) {
-         const pid = parseInt(readFileSync(PID_FILE, "utf-8").trim());
-         unlinkSync(PID_FILE);
+      if (existsSync(pidFile)) {
+         const pid = parseInt(readFileSync(pidFile, "utf-8").trim());
+         unlinkSync(pidFile);
          process.kill(pid, "SIGTERM");
       } else {
-         // Fallback
          proc.kill("SIGTERM");
       }
-   } catch (e) {
-      console.error("Kill error:", e);
+   } catch {
       try { proc.kill("SIGKILL"); } catch {}
    }
 
-   if (ctx) return ctx.reply("🛑 Userbot dihentikan.");
-   return bot.api.sendMessage(OWNER_ID, "🛑 Userbot dihentikan.");
+   await notify(`🛑 ${account?.label} dihentikan.`);
 }
 
-bot.command("start", async (ctx: Context) => startUserbot(ctx));
+async function stopAll() {
+   for (const acc of ACCOUNTS) {
+      if (processes.has(acc.id)) await stopAccount(acc.id);
+   }
+}
 
-bot.command("stop", async (ctx: Context) => stopUserbot(ctx));
+async function sendControlKeyboard() {
+   const keyboard = new InlineKeyboard();
 
-bot.command("status", async (ctx: Context) => {
-   if (!isOwner(ctx)) return ctx.reply("❌ Tidak diizinkan.");
-   ctx.reply(userbotProcess ? "🟢 Userbot sedang berjalan." : "🔴 Userbot tidak berjalan.");
-});
+   ACCOUNTS.forEach((acc, i) => {
+      const isRunning = processes.has(acc.id);
+      keyboard.text(
+         `${isRunning ? "🟢" : "⚫"} ${acc.label}`,
+         `ctrl:toggle_${acc.id}`
+      );
+      if (i % 2 === 1) keyboard.row();
+   });
 
-bot.command("menu", async (ctx: Context) => {
-   if (!isOwner(ctx)) return ctx.reply("❌ Tidak diizinkan.");
+   keyboard.row()
+      .text("⏹️ Stop Semua", "ctrl:stopall")
+      .text("ℹ️ Status", "ctrl:status")
+      .row()
+      .text(
+         autoFallback ? "🔁 Auto-switch: ON" : "🔁 Auto-switch: OFF",
+         "ctrl:togglefallback"
+      );
+
+   await bot.api
+      .sendMessage(OWNER_ID, "🎮 Kontrol Userbot:", { reply_markup: keyboard })
+      .catch(console.error);
+}
+
+bot.command("menu", async (ctx) => {
+   if (ctx.from?.id !== OWNER_ID) return ctx.reply("❌ Tidak diizinkan.");
    await sendControlKeyboard();
 });
 
-bot.callbackQuery("ctrl:start", async (ctx) => {
-   try { await ctx.answerCallbackQuery(); } catch {}
-   await startUserbot(ctx as Context);
+bot.command("status", async (ctx) => {
+   if (ctx.from?.id !== OWNER_ID) return ctx.reply("❌ Tidak diizinkan.");
+   const lines = ACCOUNTS.map(acc =>
+      `${processes.has(acc.id) ? "🟢" : "🔴"} ${acc.label}`
+   );
+   lines.push(`\n🔁 Auto-switch: ${autoFallback ? "ON" : "OFF"}`);
+   ctx.reply(lines.join("\n"));
 });
 
-bot.callbackQuery("ctrl:stop", async (ctx) => {
-   try { await ctx.answerCallbackQuery(); } catch {}
-   await stopUserbot(ctx as Context);
+bot.callbackQuery(/^ctrl:toggle_(\d+)$/, async (ctx) => {
+   await ctx.answerCallbackQuery();
+   const accountId = parseInt(ctx.match[1]);
+   if (processes.has(accountId)) {
+      await stopAccount(accountId);
+   } else {
+      await startAccount(accountId);
+   }
+});
+
+bot.callbackQuery("ctrl:stopall", async (ctx) => {
+   await ctx.answerCallbackQuery();
+   await stopAll();
+   await notify("🛑 Semua akun dihentikan.");
 });
 
 bot.callbackQuery("ctrl:status", async (ctx) => {
-   try { await ctx.answerCallbackQuery(); } catch {}
-   const running = userbotProcess ? "🟢 Userbot sedang berjalan." : "🔴 Userbot tidak berjalan.";
+   await ctx.answerCallbackQuery();
+   const lines = ACCOUNTS.map(acc =>
+      `${processes.has(acc.id) ? "🟢" : "🔴"} ${acc.label}`
+   );
+   lines.push(`\n🔁 Auto-switch: ${autoFallback ? "ON" : "OFF"}`);
    try {
-      await ctx.editMessageText(`Status: ${running}`);
-   } catch (e) {
-      await ctx.reply(running);
+      await ctx.editMessageText(lines.join("\n"));
+   } catch {
+      await ctx.reply(lines.join("\n"));
    }
 });
 
-;(async () => {
-   try {
-      await bot.api.setMyCommands([
-         { command: "start", description: "Jalankan userbot" },
-         { command: "stop", description: "Hentikan userbot" },
-         { command: "status", description: "Cek status userbot" },
-         { command: "menu", description: "Tampilkan kontrol (Start/Stop)" },
-      ]);
-   } catch (e) {
-      console.error("Gagal set commands:", e);
-   }
+bot.callbackQuery("ctrl:togglefallback", async (ctx) => {
+   await ctx.answerCallbackQuery();
+   autoFallback = !autoFallback;
+   await notify(`🔁 Auto-switch sekarang: ${autoFallback ? "ON" : "OFF"}`);
+   await sendControlKeyboard();
+});
+
+(async () => {
+   await bot.api.setMyCommands([
+      { command: "menu", description: "Tampilkan kontrol semua akun" },
+      { command: "status", description: "Cek status semua akun" },
+   ]).catch(console.error);
 
    bot.start();
    console.log("🎮 Controller bot aktif!");
