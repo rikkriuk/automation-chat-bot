@@ -4,7 +4,8 @@ import { requiredEnv as env } from "./config/env";
 import { registerEventHandlers } from "./handlers/events";
 import { writeFileSync, unlinkSync } from "fs";
 
-const PID_FILE = "./userbot.pid";
+const accountId = process.env.ACCOUNT_ID || "1";
+const PID_FILE = `./userbot-${accountId}.pid`;
 
 (async () => {
    writeFileSync(PID_FILE, String(process.pid));

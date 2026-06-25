@@ -6,6 +6,7 @@ export const requiredEnv: Record<string, string> = {
    API_HASH: process.env.API_HASH || "",
    SESSION_STRING: process.env.SESSION_STRING || "",
    TARGET_USERNAME: process.env.TARGET_USERNAME || "",
+   ACCOUNT_ID: process.env.ACCOUNT_ID || "1",
 };
 
 export async function setupEnv(): Promise<Record<string, string>> {

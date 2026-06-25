@@ -44,12 +44,9 @@ export async function processUserReply(
    if (!state.isProcessing || !text) return;
    if (state.chatAborted) return;
 
-   const isSystemMessage = [
-      ...SYSTEM_MESSAGES,
-      ...TRIGGER_PARTNER_FOUND,
-      ...TRIGGER_CHAT_ENDED,
-      ...TRIGGER_SEARCHING,
-   ].some(kw => text.toLowerCase().includes(kw.toLowerCase()));
+   const isSystemMessage = SYSTEM_MESSAGES.some(
+      kw => text.toLowerCase().includes(kw.toLowerCase())
+   );
 
    if (isSystemMessage) {
       console.log(`⚙️ Pesan sistem dilewati: "${text}"`);
@@ -82,11 +79,13 @@ export async function processUserReply(
       const randomCo = coResponses[Math.floor(Math.random() * coResponses.length)];
       await sendWithDelay(client, username, randomCo, 800);
       if (state.chatAborted) { resetState(); return; }
+
       if (state.currentStep === 1) {
-         await handleGenderStep(client, username, lower);
+         startReplyTimeout(client, username);
       } else if (state.currentStep === 2) {
          startReplyTimeout(client, username);
       }
+
       return;
    }
 
@@ -183,7 +182,7 @@ async function goToHi(client: TelegramClient, username: string) {
    if (state.currentStep === 3) return;
    state.currentStep = 3;
 
-   await sendWithDelay(client, username, "Btw, saia ada bot buat kirim stiker tele jadi stiker whatsapp, kali aja butuh", 1600);
+   await sendWithDelay(client, username, "Btw, aku ada bot buat kirim stiker tele jadi stiker whatsapp, kali aja butuh", 1600);
    if (state.chatAborted) { resetState(); return; }
    await sendWithDelay(client, username, "@SendStickerBot", 500);
    if (state.chatAborted) { resetState(); return; }

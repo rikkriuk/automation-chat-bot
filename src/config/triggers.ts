@@ -32,16 +32,10 @@ export const SYSTEM_MESSAGES = [
    "anda bisa mengubah gender",
    "ketik /search untuk",
    "ketik /next untuk",
-   "partner ditemukan",
-   "anda bisa mulai mengobrol",
-   "chat berakhir",
    "ketik /stop untuk",
-   "jika partner anda",
-   "t.me/obrolan_anonimbot",
    "/next – partner berikutnya",
    "/stop – akhiri chat",
 ];
-
 export const MALE_KEYWORDS = ["co", "cowok", "cowo", "laki", "pria", "male", "bro", "coce"];
 export const FEMALE_KEYWORDS = ["ce", "cewe", "cew", "perempuan", "wanita", "cwe", "cw", "girl", "cewek"];
 
@@ -100,4 +94,20 @@ export const GREET_RESPONSES = [
    "heyy", "heww", "hai juga", "halo juga", "hi juga",
    "haiii", "haloooo", "hihi", "hehe hai", "hai hai",
    "yo", "hoi", "hoii",
+];
+
+export const SPAM_KEYWORDS: string[] = [
+   "pinksale", "presale", "binance", "бинанс", "куплю", "wtb", "buy",
+   "soft cap", "hard cap", "bnb", "btc", "usdt", "maker", "мейкер",
+   "launchpad", "go to the moon",
+   "c c store", "cc store", "credito", "debito", "invalid card", "refunded",
+
+   "t.me/+", "t.me/m/",
+
+   "go to the moon", "launchpad",
+];
+
+export const ALLOWED_DOMAINS: string[] = [
+   "t.me/obrolan_anonimbot",
+   "t.me/ObrolanAnonimBot",
 ];

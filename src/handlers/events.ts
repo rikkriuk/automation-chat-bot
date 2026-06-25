@@ -7,6 +7,8 @@ import {
   TRIGGER_CHAT_ENDED,
   TRIGGER_SEARCHING,
   SYSTEM_MESSAGES,
+  ALLOWED_DOMAINS,
+  SPAM_KEYWORDS,
 } from "../config/triggers";
 
 const sleep = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms));
@@ -22,7 +24,7 @@ export function registerEventHandlers(client: TelegramClient, username: string) 
          const lower = text.toLowerCase();
 
          console.log("📩 Received:", text);
-
+         
          if (lower.includes("dibatasi")) {
             console.log("⚠️ Terbatas oleh sistem → menghentikan userbot.");
             try {
@@ -31,6 +33,23 @@ export function registerEventHandlers(client: TelegramClient, username: string) 
                console.error("Error saat disconnect:", e);
             }
             process.exit(2);
+         }
+
+         const isAllowedDomain = ALLOWED_DOMAINS.some(domain =>
+            lower.includes(domain.toLowerCase())
+         );
+
+         const hasTelegramLink = /t\.me\/\S+/.test(lower);
+
+         if (!isAllowedDomain) {
+            const isSpam = SPAM_KEYWORDS.some(kw =>
+               lower.includes(kw.toLowerCase())
+            );
+
+            if (isSpam || hasTelegramLink) {
+               console.log(`🚫 Spam terdeteksi (${hasTelegramLink ? "link tidak dikenal" : "keyword"}) → abaikan`);
+               return;
+            }
          }
 
          if (SYSTEM_MESSAGES.some(phrase => lower.includes(phrase))) {
