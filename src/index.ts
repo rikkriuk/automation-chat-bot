@@ -13,9 +13,11 @@ const PID_FILE = "./userbot.pid";
       new StringSession(env.SESSION_STRING),
       parseInt(env.API_ID),
       env.API_HASH,
-      { 
-         connectionRetries: 5,
-         retryDelay: 3000,
+      {
+         connectionRetries: 10,
+         retryDelay: 2000,
+         timeout: 30,
+         useWSS: false,
       }
    );
 
@@ -31,11 +33,12 @@ const PID_FILE = "./userbot.pid";
          if (!client.connected) {
             console.log("🔄 Reconnecting...");
             await client.connect();
+            registerEventHandlers(client, env.TARGET_USERNAME);
          }
       } catch (e) {
          console.error("❌ Reconnect gagal:", e);
       }
-   }, 30_000);
+   }, 15_000);
 
    const cleanup = async () => {
       clearInterval(keepAlive);
