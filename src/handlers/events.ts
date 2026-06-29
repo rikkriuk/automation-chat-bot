@@ -10,6 +10,7 @@ import {
   ALLOWED_DOMAINS,
   SPAM_KEYWORDS,
 } from "../config/triggers";
+import { stripMarkdown } from "../helpers/text";
 
 const sleep = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms));
 
@@ -21,15 +22,16 @@ export function registerEventHandlers(client: TelegramClient, username: string) 
 
       try {
          const text = message.text.trim();
-         const isLoadingIndicator = /^\.{1,3}$/.test(text.trim());
+         const stripped = stripMarkdown(text);
+         const isLoadingIndicator = /^\.{1,3}$/.test(stripped.trim());
          if (isLoadingIndicator) {
             console.log("⏳ Loading indicator → diabaikan");
             return;
          }
-         
-         const lower = text.toLowerCase();
 
-         console.log("📩 Received:", text);
+         const lower = stripped.toLowerCase();
+
+         console.log("📩 Received:", stripped);
          
          if (lower.includes("dibatasi")) {
             console.log("⚠️ Terbatas oleh sistem → menghentikan userbot.");
