@@ -1,5 +1,5 @@
 import dotenv from "dotenv";
-import { Bot } from "grammy";
+import { Bot, GrammyError } from "grammy";
 import { registerCommands } from "./commands";
 import { registerCallbacks } from "./callbacks";
 import { registerMessages } from "./messages";
@@ -15,6 +15,18 @@ const autoFallback = { value: true };
 registerCommands(bot, OWNER_ID, autoFallback);
 registerCallbacks(bot, OWNER_ID, autoFallback);
 registerMessages(bot, OWNER_ID, autoFallback);
+
+bot.catch((err) => {
+   if (err.error instanceof GrammyError) {
+      if (err.error.description.includes("query is too old")) {
+         console.log("⚠️ Callback query expired, diabaikan.");
+         return;
+      }
+      console.error("❌ Grammy error:", err.error.description);
+   } else {
+      console.error("❌ Unknown error:", err.error);
+   }
+});
 
 (async () => {
    await bot.api.setMyCommands([

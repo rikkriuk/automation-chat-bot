@@ -60,14 +60,14 @@ export function registerEventHandlers(client: TelegramClient, username: string) 
             }
          }
 
-         if (SYSTEM_MESSAGES.some(phrase => lower.includes(phrase))) {
-            console.log("🤖 Pesan sistem → abaikan");
-            return;
-         }
-
          if (TRIGGER_PARTNER_FOUND.some(phrase => lower.includes(phrase))) {
             state.isSearching = false;
             await handlePartnerFound(client, username);
+            return;
+         }
+
+         if (SYSTEM_MESSAGES.some(phrase => lower.includes(phrase))) {
+            console.log("🤖 Pesan sistem → abaikan");
             return;
          }
 
