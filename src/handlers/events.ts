@@ -21,6 +21,12 @@ export function registerEventHandlers(client: TelegramClient, username: string) 
 
       try {
          const text = message.text.trim();
+         const isLoadingIndicator = /^\.{1,3}$/.test(text.trim());
+         if (isLoadingIndicator) {
+            console.log("⏳ Loading indicator → diabaikan");
+            return;
+         }
+         
          const lower = text.toLowerCase();
 
          console.log("📩 Received:", text);

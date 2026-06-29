@@ -14,7 +14,8 @@ export async function startAccount(
    ownerId: number,
    accountId: number,
    isAuto = false,
-   autoFallback = { value: true }
+   autoFallback = { value: true },
+   targetUsername = "chatbot"
 ) {
    const account = ACCOUNTS.find(a => a.id === accountId);
    if (!account) {
@@ -30,6 +31,9 @@ export async function startAccount(
    const envPath = `.env.account${accountId}`;
    writeFileSync(envPath, `SESSION_STRING=${account.SESSION_STRING}\n`);
 
+   const staggerDelay = (accountId - 1) * 8000;
+   await new Promise(r => setTimeout(r, staggerDelay));
+
    const proc = spawn("npx", [
       "ts-node", "src/index.ts"
    ], {
@@ -39,6 +43,7 @@ export async function startAccount(
          ...process.env,
          ACCOUNT_ID: String(accountId),
          SESSION_STRING: account.SESSION_STRING,
+         TARGET_USERNAME: targetUsername,
       }
    });
 

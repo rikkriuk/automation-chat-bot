@@ -1,4 +1,5 @@
 export const TRIGGER_PARTNER_FOUND = [
+   "partner found",
    "partner ditemukan",
    "anda bisa mulai mengobrol",
    "partner found",
@@ -13,6 +14,10 @@ export const TRIGGER_CHAT_ENDED = [
    "anda tidak memiliki partner aktif",
    "you don't have an active",
    "no active partner",
+   "your partner has stopped the chat",
+   "you stopped the chat",
+   "type /search to find a new partner",
+   "you are not in a chat",
 ];
 
 export const TRIGGER_SEARCHING = [
@@ -22,6 +27,8 @@ export const TRIGGER_SEARCHING = [
    "looking for",
    "searching for",
    "🔍",
+   "searching for a new partner",
+   "sᴇᴀʀᴄʜɪɴɢ ғᴏʀ ᴀ ᴘᴀʀᴛɴᴇʀ",
 ];
 
 export const SYSTEM_MESSAGES = [
@@ -35,6 +42,14 @@ export const SYSTEM_MESSAGES = [
    "ketik /stop untuk",
    "/next – partner berikutnya",
    "/stop – akhiri chat",
+   "you are in the chat right now",
+   "find a new partner",
+   "/next — find a new partner",
+   "/stop — stop this chat",
+   "ᴅɪᴍᴏʜᴏɴ ᴜɴᴛᴜᴋ ᴍᴇɴɪɴɢɢᴀʟᴋᴀɴ ᴜʟᴀsᴀɴ",
+   "ғᴇᴇᴅʙᴀᴄᴋ ᴀᴋᴀɴ ᴍᴇᴍʙᴀɴᴛᴜ",
+   "..",
+   "...",
 ];
 export const MALE_KEYWORDS = ["co", "cowok", "cowo", "laki", "pria", "male", "bro", "coce"];
 export const FEMALE_KEYWORDS = ["ce", "cewe", "cew", "perempuan", "wanita", "cwe", "cw", "girl", "cewek"];
@@ -110,6 +125,9 @@ export const SPAM_KEYWORDS: string[] = [
    "t.me/+", "t.me/m/",
 
    "go to the moon", "launchpad",
+   "t.me/group_fwb",
+   "ᴋᴀᴍᴜ ʟᴀɢɪ ɢᴀʙᴜᴛ",
+   "[ᴀᴅs]",
 ];
 
 export const ALLOWED_DOMAINS: string[] = [
